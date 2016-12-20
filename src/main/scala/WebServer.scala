@@ -67,15 +67,33 @@ object WebServer extends App {
     val quarterThree = entries.filter(entry => entry.healthScore >= 400 && entry.healthScore < 600)
     val quarterFour = entries.filter(entry => entry.healthScore >= 600 && entry.healthScore <= 800)
 
-    val nodeOne = node("0-200", quarterOne.map(_.toJSON).mkString(",\n"), Some("#ac2517"))
-    val nodeTwo = node("200-400", quarterTwo.map(_.toJSON).mkString(",\n"), Some("#b04c00"))
-    val nodeThree = node("400-600", quarterThree.map(_.toJSON).mkString(",\n"), Some("#da9a00"))
-    val nodeFour = node("600-800", quarterFour.map(_.toJSON).mkString(",\n"), Some("#19b75c"))
+    val nodeOne = node("0-200", quarterOne.map(_.toJSON).mkString(",\n"))
+    val nodeTwo = node("200-400", quarterTwo.map(_.toJSON).mkString(",\n"))
+    val nodeThree = node("400-600", quarterThree.map(_.toJSON).mkString(",\n"))
+    val nodeFour = node("600-800", quarterFour.map(_.toJSON).mkString(",\n"))
 
-    val halfOne = node("0-400", Seq(nodeOne, nodeTwo).mkString(",\n"))
-    val halfTwo = node("400-800", Seq(nodeThree, nodeFour).mkString(",\n"))
+    val halfOneSeq = (quarterOne.nonEmpty, quarterTwo.nonEmpty) match {
+      case (true, true) => Seq(nodeOne, nodeTwo)
+      case (true, false) => Seq(nodeOne)
+      case (false, true) => Seq(nodeTwo)
+      case (false, false) => Seq()
+    }
+    val halfOne = node("0-400", halfOneSeq.mkString(",\n"))
 
-    s"[$halfOne, $halfTwo]"
+    val halfTwoSeq = (quarterThree.nonEmpty, quarterFour.nonEmpty) match {
+      case (true, true) => Seq(nodeThree, nodeFour)
+      case (true, false) => Seq(nodeThree)
+      case (false, true) => Seq(nodeFour)
+      case (false, false) => Seq()
+    }
+    val halfTwo = node("400-800", halfTwoSeq.mkString(",\n"))
+
+    (quarterOne.nonEmpty || quarterTwo.nonEmpty, quarterThree.nonEmpty || quarterFour.nonEmpty) match {
+      case (true, true) => s"[$halfOne, $halfTwo]"
+      case (true, false) => s"[$halfOne]"
+      case (false, true) => s"[$halfTwo]"
+      case (false, false) => s"[]"
+    }
   }
 
   val lineRequestCache: collection.mutable.Map[Set[Int], String] = collection.mutable.Map()
