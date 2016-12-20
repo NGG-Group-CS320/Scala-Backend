@@ -15,3 +15,6 @@ libraryDependencies ++= Seq(
   "ch.megard" %% "akka-http-cors" % "0.1.10",
   "org.postgresql" % "postgresql" % "9.4.1212"
 )
+
+assemblyJarName in assembly := "mfdat-server.jar"
+mainClass in assembly := Some("mfdat.WebServer")
