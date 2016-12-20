@@ -8,21 +8,25 @@ import akka.http.scaladsl.model._
 import akka.http.scaladsl.server.Directives._
 import akka.stream.ActorMaterializer
 
+import ch.megard.akka.http.cors.CorsDirectives._
+
 object WebServer extends App {
   implicit val system = ActorSystem("mfdat")
   implicit val materializer = ActorMaterializer()
   implicit val executionContext = system.dispatcher
 
   val route =
-    get {
-      path("") {
-        complete(HttpEntity(ContentTypes.`text/html(UTF-8)`, "MF-DAT RESTful API"))
-      } ~
-      pathPrefix("wheel" / Remaining) { input =>
-        complete(HttpEntity(ContentTypes.`application/json`, wheelRequest(input.split(",").map(_.toInt).toSet)))
-      } ~
-      pathPrefix("line" / Remaining) { input =>
-        complete(HttpEntity(ContentTypes.`application/json`, lineRequest(input.split(",").map(_.toInt).toSet)))
+    cors() {
+      get {
+        path("") {
+          complete(HttpEntity(ContentTypes.`text/html(UTF-8)`, "MF-DAT RESTful API"))
+        } ~
+        pathPrefix("wheel" / Remaining) { input =>
+          complete(HttpEntity(ContentTypes.`application/json`, wheelRequest(input.split(",").map(_.toInt).toSet)))
+        } ~
+        pathPrefix("line" / Remaining) { input =>
+          complete(HttpEntity(ContentTypes.`application/json`, lineRequest(input.split(",").map(_.toInt).toSet)))
+        }
       }
     }
 
@@ -60,6 +64,33 @@ object WebServer extends App {
 
   def lineRequest(ids: Set[Int]): String = {
     val prepared = Database.prepare(s"SELECT * FROM ${Database.config.scoresTable.get} WHERE systemid = ?")
+
+    val systems = ids.map { id =>
+      var entries: Set[ScoresEntry] = Set()
+
+      prepared.setInt(1, id)
+      val rs = prepared.executeQuery()
+
+      var last = ScoresEntry.nextFrom(rs)
+      while (last.nonEmpty) {
+        entries = entries + last.get
+        last = ScoresEntry.nextFrom(rs)
+      }
+
+      (id, entries)
+    }
+
+    def node(pair: (Int, Set[ScoresEntry])): String = pair match {
+      case (id, entries) => {
+        val data = entries.map(_.toJSONPoint).mkString(",\n")
+        s"""{
+          "id": "$id",
+          "name": "System $id",
+          "data": [$data]
+        }"""
+      }
+    }
+
     ???
   }
 

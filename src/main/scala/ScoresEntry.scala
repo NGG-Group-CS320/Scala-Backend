@@ -49,7 +49,7 @@ case class ScoresEntry(systemId: Int, from: Timestamp, to: Timestamp, healthScor
     "writeScore": "$writeScore",
     "readScore": "$readScore",
     "cbScore": "$cpuBandwidthScore",
-    "delAckPct": "$delAckPct",
+    "delAckPct": "$delAckPct"
   }"""
 
   def toJSONPoint: String = s"""{"time": "$toUnix", "score", "$healthScore"}"""
