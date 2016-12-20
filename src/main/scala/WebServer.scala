@@ -26,13 +26,46 @@ object WebServer extends App {
       }
     }
 
-  def wheelRequest(ids: Set[Int]): String = ???
+  def wheelRequest(ids: Set[Int]): String = {
+    val subQuery = s"""SELECT MAX("from") FROM ${Database.config.scoresTable.get} WHERE systemid = ?"""
+    val prepared = Database.prepare(s"""SELECT * FROM ${Database.config.scoresTable.get} WHERE systemid = ? AND "from" = ($subQuery)""")
 
-  def lineRequest(ids: Set[Int]): String = ???
+    def node(name: String, children: String): String = s"""{
+      "name": "$name",
+      "children": [$children]
+    }"""
 
-  val bindingFuture = Http().bindAndHandle(route, "localhost", 8080)
+    val entries = ids.flatMap { id =>
+      prepared.setInt(1, id)
+      prepared.setInt(2, id)
+      val rs = prepared.executeQuery()
+      ScoresEntry.nextFrom(rs)
+    }
 
-  println(s"API server is now online at http://localhost:8080/\nPress RETURN to stop...")
+    val quarterOne = entries.filter(entry => entry.healthScore >= 0 && entry.healthScore < 200)
+    val quarterTwo = entries.filter(entry => entry.healthScore >= 200 && entry.healthScore < 400)
+    val quarterThree = entries.filter(entry => entry.healthScore >= 400 && entry.healthScore < 600)
+    val quarterFour = entries.filter(entry => entry.healthScore >= 600 && entry.healthScore <= 800)
+
+    val nodeOne = node("0-200", quarterOne.map(_.toJSON).mkString(",\n"))
+    val nodeTwo = node("200-400", quarterTwo.map(_.toJSON).mkString(",\n"))
+    val nodeThree = node("400-600", quarterThree.map(_.toJSON).mkString(",\n"))
+    val nodeFour = node("600-800", quarterFour.map(_.toJSON).mkString(",\n"))
+
+    val halfOne = node("0-400", Seq(nodeOne, nodeTwo).mkString(",\n"))
+    val halfTwo = node("400-800", Seq(nodeThree, nodeFour).mkString(",\n"))
+
+    s"[$halfOne, $halfTwo]"
+  }
+
+  def lineRequest(ids: Set[Int]): String = {
+    val prepared = Database.prepare(s"SELECT * FROM ${Database.config.scoresTable.get} WHERE systemid = ?")
+    ???
+  }
+
+  val bindingFuture = Http().bindAndHandle(route, "localhost", 8081)
+
+  println(s"API server is now online at http://localhost:8081/\nPress RETURN to stop...")
   // Run until new line is read.
   StdIn.readLine()
 

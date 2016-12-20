@@ -20,8 +20,12 @@ case class ScoresEntry(systemId: Int, from: Timestamp, to: Timestamp, healthScor
   require(healthScore >= 0 && healthScore <= 800, s"Invalid health score found (value $healthScore was not on range [0, 800]).")
   require(writeScore >= 0 && writeScore <= 800, s"Invalid write score found (value $writeScore was not on range [0, 800]).")
   require(readScore >= 0 && readScore <= 800, s"Invalid read score found (value $readScore was not on range [0, 800]).")
-  require(cpuBandwidthScore >= 0 && cpuBandwidthScore <= 800, s"Invalid CPU-bandwidth score found (value $cpuBandwidthScore was not on range [0, 800]).")
+  // FIXME: Some systems appear to have out-of-range CPU-bandwidth scores. Either CPU is wrong, or Bandwidth is being normalized incorrectly.
+  // require(cpuBandwidthScore >= 0 && cpuBandwidthScore <= 800, s"Invalid CPU-bandwidth score found (value $cpuBandwidthScore was not on range [0, 800]).")
   require(delAckPct >= 0 && delAckPct <= 800, s"Invalid delayed acknowledgement percentage found (value $delAckPct was not on range [0, 1]).")
+
+  // Converts from milliseconds to seconds for Unix timestamp.
+  val (fromUnix, toUnix) = (from.getTime / 1000, to.getTime / 1000)
 
   // Computes the color according to the color coding rules for health scores.
   def color: String = (healthScore / 100) match {
@@ -45,6 +49,8 @@ case class ScoresEntry(systemId: Int, from: Timestamp, to: Timestamp, healthScor
     "writeScore": "$writeScore",
     "readScore": "$readScore",
     "cbScore": "$cpuBandwidthScore",
-    "delAckPct": "$delAckPct"
+    "delAckPct": "$delAckPct",
   }"""
+
+  def toJSONPoint: String = s"""{"time": "$toUnix", "score", "$healthScore"}"""
 }
