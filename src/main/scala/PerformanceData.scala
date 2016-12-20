@@ -2,7 +2,6 @@ package mfdat
 
 import java.sql.{ResultSet, Timestamp}
 
-import Errors._
 import Implicits._
 
 object PerformanceData {
@@ -50,18 +49,4 @@ case class PerformanceData(from: Timestamp, to: Timestamp, writes: Vector[Double
 
   // Computes the human readable health score for this specific entry.
   def healthScore: Int = interimHealthScore.toHumanReadable
-
-  // Computes the color according to the color coding rules for health scores.
-  def color: String = (healthScore / 100) match {
-    case 0 => "#c0392b"
-    case 1 => "#e74c3c"
-    case 2 => "#d35400"
-    case 3 => "#e67e22"
-    case 4 => "#f39c12"
-    case 5 => "#f1c40f"
-    case 6 => "#2ecc71"
-    case 7 => "#27ae60"
-    case 8 => "#27ae60"
-    case _ => throw Unreachable
-  }
 }
