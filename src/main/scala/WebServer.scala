@@ -138,9 +138,20 @@ object WebServer extends App {
     s"[$result]"
   }
 
-  val bindingFuture = Http().bindAndHandle(route, "localhost", 8081)
+  val host = Database.config.bindHost.getOrElse("127.0.0.1")
+  val port = Database.config.bindPort.getOrElse(8081)
 
-  println(s"API server is now online at http://localhost:8081/\nPress RETURN to stop...")
+  val bindingFuture = Http().bindAndHandle(route, host, port)
+
+  println(s"API server is now bound to http://$host/$port/.\nPress RETURN to stop...")
+
+  val allIds = Set(16, 17, 94, 153, 251, 325, 442, 444, 809, 2848, 3565)
+  println(s"[BEGIN] Preprocessing requests for caching.")
+  for (ids <- allIds.subsets) {
+    val _ = (wheelRequest(ids), lineRequest(ids))
+  }
+  println(s"[COMPLETE] Preprocessing requests for caching complete.")
+
   // Run until new line is read.
   StdIn.readLine()
 

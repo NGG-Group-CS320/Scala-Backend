@@ -14,4 +14,7 @@ case class Config(path: String) {
   def scoresTable: Option[String] = Option(properties.getProperty("scorestable"))
   def username: Option[String] = Option(properties.getProperty("user"))
   def password: Option[String] = Option(properties.getProperty("password"))
+
+  def bindHost: Option[String] = Option(properties.getProperty("bindhost"))
+  def bindPort: Option[Int] = Option(properties.getProperty("bindport")).map(_.toInt)
 }
